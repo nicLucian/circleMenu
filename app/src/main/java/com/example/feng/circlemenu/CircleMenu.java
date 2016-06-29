@@ -1,17 +1,16 @@
 package com.example.feng.circlemenu;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
-public class CircleMenu extends ViewGroup{
+public class CircleMenu extends ViewGroup {
+    private static final int DEFAULT_RADIUS = 150;
+    private static final double FACTOR = 1.0 / 4;
     private String[] data = {"a", "b", "c", "d", "e", "f", "g", "H"};
     private int mCount = data.length;
-    private int mRadius = 300;
-    private int mChildRadius = 50;
 
     public CircleMenu(Context context) {
         this(context, null);
@@ -27,42 +26,56 @@ public class CircleMenu extends ViewGroup{
 
     public CircleMenu(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        for (int i = 0; i < mCount; i++) {
-            TextView textView = new TextView(context);
-            textView.setText(data[i]);
-            textView.setTextSize(20);
-            textView.setTextColor(Color.parseColor("#000000"));
-            addView(textView);
-        }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(mRadius, mRadius);
-        for (int i = 0; i < mCount; i++) {
+        int resWidth = 0, resHeight = 0;
+
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        Log.d("liujianfeng", "heightMode = " + heightMode + "|EXACTLY=" + MeasureSpec.EXACTLY);
+        Log.d("liujianfeng", "equals = " + (widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY));
+        Log.d("liujianfeng", "width " + width);
+
+
+        if (widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY) {
+            resWidth = getSuggestedMinimumWidth();
+            resWidth = resWidth == 0 ? DEFAULT_RADIUS*2 : resWidth;
+            resHeight = getSuggestedMinimumHeight();
+            resHeight = resHeight == 0 ? DEFAULT_RADIUS*2 : resHeight;
+        } else {
+            resWidth = resHeight = Math.min(width, height);
+            Log.d("liujianfeng1", "resWidth=" + resWidth + "resHeight = " + resHeight);
+        }
+
+        for (int i = 0; i < getChildCount(); i++) {
             View childView = getChildAt(i);
-            int childMeasureSpec = MeasureSpec.makeMeasureSpec(mChildRadius, MeasureSpec.EXACTLY);
+            int childMeasureSpec = MeasureSpec.makeMeasureSpec((int) (resWidth * FACTOR), MeasureSpec.EXACTLY);
             childView.measure(childMeasureSpec, childMeasureSpec);
         }
+        Log.d("liujianfeng2222222", "resWidth=" + resWidth + "resHeight = " + resHeight);
+        setMeasuredDimension(resWidth, resHeight);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        double deltRadius = 2 * Math.PI / mCount;
+        Log.d("liujianfeng", "layout width=" + getMeasuredWidth());
+        Log.d("liujianfeng", "layout height=" + getMeasuredHeight());
+        double deltDegree = 2 * Math.PI / getChildCount();
         int centerX = getMeasuredWidth() / 2;
         int centerY = getMeasuredHeight() / 2;
-        for (int i = 0; i < mCount; i++) {
+        int width = centerX;
+        int childWidth = (int) (width * FACTOR);
+        for (int i = 0; i < getChildCount(); i++) {
             View childView = getChildAt(i);
-            double childLeft = centerX + mRadius*Math.cos(deltRadius*i)/3 - mChildRadius/2;
-            double childRight = childLeft + mChildRadius;
-            double childTop = centerY - mRadius*Math.sin(deltRadius*i)/3 - mChildRadius/2;
-            double childBottom = childTop + mChildRadius;
-            childView.layout((int)childLeft, (int)childTop, (int)childRight, (int)childBottom);
+            double degree = deltDegree * i;
+            double distance = width - childWidth;
+            double left = centerX + distance * Math.cos(degree) - childWidth;
+            double top = centerY - distance * Math.sin(degree) - childWidth;
+            childView.layout((int) left, (int) top, (int) left + childWidth * 2, (int) top + childWidth * 2);
         }
-
-//        for (int i = 0; i < mCount; i++) {
-//            View childView = getChildAt(i);
-//            childView.layout(100 * i, 100 * i, 100 * i + mChildRadius, 100 * i + mChildRadius);
-//        }
     }
 }
